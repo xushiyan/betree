@@ -1,8 +1,16 @@
 class Node(object):
-    def __init__(self, key, value):
+    def __init__(self, key: int, value: str):
         self.key = key
         self.value = value
         self.children = None
+    
+    def __repr__(self):
+        return f'{self.key}:{self.value}'
+    
+    @classmethod
+    def from_repr(self, s):
+        k, v = s.split(':')
+        return Node(int(k), v)
     
     def addChild(self, node):
         if not isinstance(node, Node):
@@ -14,6 +22,39 @@ class Node(object):
 class Betree(object):
     def __init__(self, root=None):
         self.root = root
+    
+    def __repr__(self):
+        return self.serialize()
+    
+    @classmethod
+    def deserialize(cls, s):
+        if not s or not isinstance(s, str):
+            raise ValueError
+        
+        def parse_until_next_marker(i, s):
+            begin = end = i + 1
+            while s[end] not in ('(', ')'):
+                end += 1
+            return end, s[begin:end]
+        
+        cursor, l = 0, len(s)
+        stack = []
+        while cursor < l:
+            c = s[cursor]
+            if c == '(': 
+                # push to stack
+                cursor, r = parse_until_next_marker(cursor, s)
+                node = Node.from_repr(r)
+                stack.append(node)
+            elif c == ')':
+                # make top of stack a child
+                tos = stack.pop()
+                if stack:
+                    stack[-1].addChild(tos)
+                cursor += 1
+            else:
+                raise ValueError(f'Expected cursor value: {cursor}')
+        return Betree(root=tos)
 
     def serialize(self):
         parts = []
@@ -24,7 +65,7 @@ class Betree(object):
         if not node:
             return
         parts.append('(')
-        parts.append(str(node.value))
+        parts.append(repr(node))
         if node.children:
             for child in node.children:
                 self._preorder(parts, child)
@@ -58,7 +99,10 @@ def main():
     d.addChild(j)
 
     t = Betree(root=a)
-    print(t.serialize())
+    s = repr(t)
+    print(s)
+    t = Betree.deserialize(s)
+    print(t)
 
 if __name__ == '__main__':
     main()
