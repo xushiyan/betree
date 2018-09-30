@@ -1,8 +1,12 @@
+import re
+
+
 class Node(object):
-    def __init__(self, key: int, value: str, *, evaluator=lambda: NotImplemented):
+    def __init__(self, key: int, value: str, *, evaluator=lambda: NotImplemented, **evaluator_params):
         self.key = key
         self.value = value
         self.evaluator = evaluator
+        self.evaluator_params = evaluator_params
         self.children = None
     
     def __repr__(self):
@@ -17,7 +21,7 @@ class Node(object):
             else:
                 raise ValueError(f'Unsupported value: {self.value}')
         else:
-            return self.evaluator()
+            return self.evaluator(**self.evaluator_params)
 
     @classmethod
     def from_repr(cls, s):
@@ -32,8 +36,9 @@ class Node(object):
         self.children.append(node)
 
 class Betree(object):
-    def __init__(self, root=None):
+    def __init__(self, root=None, nodes=None):
         self.root = root
+        self.nodes = nodes
     
     def __repr__(self):
         return self.serialize()
@@ -44,17 +49,24 @@ class Betree(object):
             raise ValueError
         return r()
     
+    def get_node(self, key):
+        return self.nodes.get(key)
+    
     @classmethod
     def deserialize(cls, s):
         if not s or not isinstance(s, str):
             raise ValueError
         
+        pattern = re.compile(r'\s+')
+        s = re.sub(pattern, '', s)
+
         def parse_until_next_marker(i, s):
             begin = end = i + 1
             while s[end] not in ('(', ')'):
                 end += 1
             return end, s[begin:end]
         
+        nodes = {}
         cursor, l = 0, len(s)
         stack = []
         while cursor < l:
@@ -62,6 +74,7 @@ class Betree(object):
             if c == '(': # push to stack
                 cursor, r = parse_until_next_marker(cursor, s)
                 node = Node.from_repr(r)
+                nodes[node.key] = node
                 stack.append(node)
             elif c == ')': # make top of stack a child
                 tos = stack.pop()
@@ -70,7 +83,7 @@ class Betree(object):
                 cursor += 1
             else:
                 raise ValueError(f'Expected cursor value: {cursor}')
-        return Betree(root=tos)
+        return Betree(root=tos, nodes=nodes)
 
     def serialize(self):
         parts = []
@@ -87,8 +100,3 @@ class Betree(object):
                 self._preorder(parts, child)
         parts.append(')')
     
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
