@@ -2,24 +2,25 @@ import re
 
 
 class Node(object):
-    def __init__(self, key: int, value: str, *, evaluator=lambda: NotImplemented, **evaluator_params):
+    def __init__(self, key: int, value: str, *, evaluator=None, **evaluator_params):
         self.key = key
         self.value = value
-        self.evaluator = evaluator
+        self.evaluator = evaluator if callable(evaluator) else lambda: NotImplemented
         self.evaluator_params = evaluator_params
         self.children = None
+        if value == '||':
+            self.children_evaluator = any
+        elif value == '&&':
+            self.children_evaluator = all
+        else:
+            self.children_evaluator = lambda *_: NotImplemented
     
     def __repr__(self):
         return f'{self.key}:{self.value}'
     
     def __call__(self):
         if self.children:
-            if self.value == '||':
-                return any(c() for c in self.children)
-            elif self.value == '&&':
-                return all(c() for c in self.children)
-            else:
-                raise ValueError(f'Unsupported value: {self.value}')
+            return self.children_evaluator(c() for c in self.children)
         else:
             return self.evaluator(**self.evaluator_params)
 
