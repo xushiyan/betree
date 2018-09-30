@@ -1,3 +1,3 @@
-from .betree import Betree
+from .betree import Betree, Node
 
-__all__ = ['Betree']
+__all__ = ['Betree', 'Node']

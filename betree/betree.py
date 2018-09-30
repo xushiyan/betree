@@ -1,16 +1,28 @@
 class Node(object):
-    def __init__(self, key: int, value: str):
+    def __init__(self, key: int, value: str, *, evaluator=lambda: NotImplemented):
         self.key = key
         self.value = value
+        self.evaluator = evaluator
         self.children = None
     
     def __repr__(self):
         return f'{self.key}:{self.value}'
     
+    def __call__(self):
+        if self.children:
+            if self.value == '||':
+                return any(c() for c in self.children)
+            elif self.value == '&&':
+                return all(c() for c in self.children)
+            else:
+                raise ValueError(f'Unsupported value: {self.value}')
+        else:
+            return self.evaluator()
+
     @classmethod
-    def from_repr(self, s):
+    def from_repr(cls, s):
         k, v = s.split(':')
-        return Node(int(k), v)
+        return cls(int(k), v)
     
     def addChild(self, node):
         if not isinstance(node, Node):
@@ -25,6 +37,12 @@ class Betree(object):
     
     def __repr__(self):
         return self.serialize()
+    
+    def __call__(self):
+        r = self.root
+        if not callable(r):
+            raise ValueError
+        return r()
     
     @classmethod
     def deserialize(cls, s):
@@ -41,13 +59,11 @@ class Betree(object):
         stack = []
         while cursor < l:
             c = s[cursor]
-            if c == '(': 
-                # push to stack
+            if c == '(': # push to stack
                 cursor, r = parse_until_next_marker(cursor, s)
                 node = Node.from_repr(r)
                 stack.append(node)
-            elif c == ')':
-                # make top of stack a child
+            elif c == ')': # make top of stack a child
                 tos = stack.pop()
                 if stack:
                     stack[-1].addChild(tos)
@@ -72,37 +88,7 @@ class Betree(object):
         parts.append(')')
     
 def main():
-    a = Node(1, 'a')
-    b = Node(2, 'b')
-    c = Node(3, 'c')
-    d = Node(4, 'd')
-    e = Node(5, 'e')
-    f = Node(6, 'f')
-    g = Node(7, 'g')
-    h = Node(8, 'h')
-    i = Node(9, 'i')
-    j = Node(10, 'j')
-    k = Node(11, 'k')
-
-    a.addChild(b)
-    a.addChild(c)
-    a.addChild(d)
-
-    b.addChild(e)
-    b.addChild(f)
-
-    f.addChild(k)
-
-    d.addChild(g)
-    d.addChild(h)
-    d.addChild(i)
-    d.addChild(j)
-
-    t = Betree(root=a)
-    s = repr(t)
-    print(s)
-    t = Betree.deserialize(s)
-    print(t)
+    pass
 
 if __name__ == '__main__':
     main()
