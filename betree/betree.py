@@ -75,6 +75,8 @@ class Betree(object):
             if c == '(': # push to stack
                 cursor, r = parse_until_next_marker(cursor, s)
                 node = Node.from_repr(r)
+                if node.key in nodes:
+                    raise KeyError(f'Duplicate node key found: {node.key}')
                 nodes[node.key] = node
                 stack.append(node)
             elif c == ')': # make top of stack a child
