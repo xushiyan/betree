@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from betree import Betree, Node
 
+
 class DeserTestCase(TestCase):
     def setUp(self):
         a = Node(1, 'a')
@@ -37,6 +38,7 @@ class DeserTestCase(TestCase):
         t = Betree.deserialize(s)
         self.assertEqual(s, repr(t))
 
+
 class BoolEvaluationTestCase(TestCase):
     def test_simple_AND_evaluation(self):
         a = Node(1, '&&')
@@ -44,7 +46,7 @@ class BoolEvaluationTestCase(TestCase):
         c = Node(3, 'activated', evaluator=lambda: False)
         a.addChild(b)
         a.addChild(c)
-        t = Betree(root=a) 
+        t = Betree(root=a)
         self.assertFalse(t())
         b.evaluator = lambda: True
         self.assertFalse(t())
@@ -57,7 +59,7 @@ class BoolEvaluationTestCase(TestCase):
         c = Node(3, 'activated', evaluator=lambda: False)
         a.addChild(b)
         a.addChild(c)
-        t = Betree(root=a) 
+        t = Betree(root=a)
         self.assertFalse(t())
         b.evaluator = lambda: True
         self.assertTrue(t())
